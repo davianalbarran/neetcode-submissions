@@ -1,47 +1,37 @@
+# Bellman-Ford algo - good here for the at most k constraint
+
+# Start at source node, then do BFS
+
+# For each level traversed, keep track of min cost
+
+# We want the initial costs to other nodes to be infinity
+
+# When we reach a node that cost less to traverse to, we will update a temporary array rather than
+# the original
+
+# Using a temp array allows us to retain the integrity of the original array so we don't accidentally
+# skip edges because we previously traversed the path and assigned the minimum we saw on that path to
+# the original
+
+# We use Bellman-Ford because it's much simpler to implement in this prob and maintains the Big O
+# Complexity O(E * k)
 class Solution:
-    # topological sort
-    # DAGs - directed acyclical graph
-    def foreignDictionary(self, words: List[str]) -> str:
-        adj = { c: set() for w in words for c in w }
+    def findCheapestPrice(self, n: int, flights: List[List[int]], src: int, dst: int, k: int) -> int:
+        N = len(flights)
+        prices = [float("infinity")] * n
+        prices[src] = 0
 
-        for i in range(len(words) - 1):
-            word1, word2 = words[i], words[i + 1]
+        for i in range(k + 1): # specific to this prob - k stops means we can move k + 1 levels
+            tmp_prices = prices.copy()
 
-            min_len = min(len(word1), len(word2))
-
-            if len(word1) > len(word2) and word1[:min_len] == word2[:min_len]:
-                return "" # invalid because lexicographical order means that all else equal, shorter words should win
+            for s, d, p in flights:
+                if prices[s] == float("inf"): # can't reach this node if price is infinity
+                    continue
+                if prices[s] + p < tmp_prices[d]:
+                    tmp_prices[d] = prices[s] + p # save the smaller price
             
-            for j in range(min_len):
-                if word1[j] != word2[j]:
-                    adj[word1[j]].add(word2[j]) # we found the differing letter and we know word1's letter precedes it
-                    break
+            # now we can persist prices since we went through all the flights
+            # if the iteration through our flights returns something smaller
+            prices = tmp_prices
         
-        visited = defaultdict(bool)
-        cycle = set()
-        res = []
-
-        # we need to do postorder dfs here because we need to traverse
-        # all children before adding a node since we could end up in invalid
-        # states if we go to a node from a grandparent that has already been 
-        # visted by a middle ancestor node
-        def dfs(node):
-            if node in visited:
-                return visited[node] # this will return true if the node has already been visited
-            
-            visited[node] = True
-
-            for nei in adj[node]:
-                if dfs(nei):
-                    return True
-
-            visited[node] = False
-            res.append(node) # we do this at the end for postorder DFS
-        
-        for c in adj:
-            if dfs(c):
-                return ""
-        
-        res.reverse()
-        return "".join(res)
-            
+        return prices[dst] if prices[dst] != float("inf") else -1
